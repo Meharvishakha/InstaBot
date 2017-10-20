@@ -166,10 +166,11 @@ def get_user_post(username):
     elif ch == 2:
         if user_post['meta']['code'] == 200:
             if len(user_post['data']):
+                length = len(user_post) - 1
                 i = 0
                 no = 0
                 cnt = user_post['data'][0]['likes']['count']
-                while i < len(user_post):                                          #this loop will check post with the minimum no. of likes
+                while i <= length:                                          #this loop will check post with the minimum no. of likes
                     if user_post['data'][i]['likes']['count'] <= cnt:
                         no = i
                         cnt = user_post['data'][i]['likes']['count']
@@ -184,6 +185,25 @@ def get_user_post(username):
             print 'Not valid status!'
     else:
         print 'Wrong choice'
+
+'''
+Function declaration to print list of people who liked the post
+'''
+
+def list_of_people_liked(username):
+    media_id = get_post_id(username)
+    req_url = (BASE_URL + 'media/%s/likes?access_token=%s') % (media_id, ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    list = requests.get(req_url).json()
+    if len(list):
+        length = len(list) - 1
+        i = 0
+        while i < length:
+            print 'Username : %s\n' % username
+            print 'Name : %s\n' % (list['data'][i]['full_name'])
+            i = i + 1
+    else:
+        print 'There are no likes yet'
 
 '''
 Function declaration to like a post of another user
@@ -212,9 +232,10 @@ def get_comment_list(username):
 
     if comment_list['meta']['code'] == 200:
         if len(comment_list['data']):
+            length = len(comment_list) - 1
             print 'List of comments are:'
             i = 0
-            while i < len(comment_list):
+            while i < length:
                 print comment_list['data'][i]['text']
                 i = i + 1
         else:
@@ -251,8 +272,9 @@ def delete_negative_comment():
     comment_info = requests.get(req_url).json()
     if comment_info['meta']['code'] == 200:
         if len(comment_info['data']):
+            length = len(comment_info) - 1
             i = 0
-            while i < len(comment_info):
+            while i < length:
                 comment_id = comment_info['data'][i]['id']
                 comment_text = comment_info['data'][i]['text']
                 blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
@@ -278,12 +300,11 @@ def delete_comment_by_word(word):
     comment_info = requests.get(req_url).json()
     if comment_info['meta']['code'] == 200:
         if len(comment_info['data']):
+            length = len(comment_info) - 1
             i = 0
-            print comment_info['data'][i]['text']
-            while i < len(comment_info):
+            while i < length:
                 comment_id = comment_info['data'][i]['id']
                 comment_text = comment_info['data'][i]['text']
-                print comment_text
                 if word in comment_text:
                     req_url = (BASE_URL + 'media/%s/comments/%s?access_token=%s') % (media_id, comment_id, ACCESS_TOKEN)
                     print 'DELETE request url : %s' % (req_url)
@@ -306,12 +327,13 @@ def start_bot():
         print "2.Get details of a user by username\n"
         print "3.Get your own recent post\n"
         print "4.Get the recent post of a user by username\n"
-        print "5.Like the recent post of a user\n"
-        print "6.Get a list of comments on the recent post of a user\n"
-        print "7.Make a comment on the recent post of a user\n"
-        print "8.Delete negative comments from your recent post\n"
-        print "9. Delete comment with a particular word\n"
-        print "10.Exit\n"
+        print "5.Get list of people who liked the post of a user\n"
+        print "6.Like the recent post of a user\n"
+        print "7.Get a list of comments on the recent post of a user\n"
+        print "8.Make a comment on the recent post of a user\n"
+        print "9.Delete negative comments from your recent post\n"
+        print "10. Delete comment with a particular word\n"
+        print "11.Exit\n"
 
         choice = int(raw_input("Enter you choice: "))
         if choice == 1:
@@ -326,19 +348,22 @@ def start_bot():
             get_user_post(username)
         elif choice == 5:
             username = raw_input("Enter the username of the user: ")
-            like_a_post(username)
+            list_of_people_liked(username)
         elif choice == 6:
             username = raw_input("Enter the username of the user: ")
-            get_comment_list(username)
+            like_a_post(username)
         elif choice == 7:
             username = raw_input("Enter the username of the user: ")
-            make_a_comment(username)
+            get_comment_list(username)
         elif choice == 8:
-            delete_negative_comment()
+            username = raw_input("Enter the username of the user: ")
+            make_a_comment(username)
         elif choice == 9:
+            delete_negative_comment()
+        elif choice == 10:
             word = raw_input("Enter word to be searched in comment: ")
             print delete_comment_by_word(word)
-        elif choice == 10:
+        elif choice == 11:
             exit()
         else:
             print "Wrong choice"
