@@ -24,7 +24,7 @@ def self_info():
         print 'Status code other than 200 received!'
 
 '''
-Function declaration to get the ID of a user by username
+Function declaration to get the Insta ID of a user by username
 '''
 
 def get_user_id(username):
@@ -117,7 +117,7 @@ def get_user_post(username):
                 no = 0
                 cnt = user_post['data'][0]['likes']['count']
                 print cnt
-                while i <= 10:                                          #this loop will check max 10 post and find the minimum liked post
+                while i <= len(user_post):                                          #this loop will check post with the minimum no. of likes
                     if user_post['data'][i]['likes']['count'] < cnt:
                         no = i
                         cnt = user_post['data'][i]['likes']['count']
@@ -133,6 +133,82 @@ def get_user_post(username):
     else:
         print 'Wrong choice'
 
+'''
+Function declaration to get post ID of another user
+'''
+
+def get_post_id(username):
+    user_id = get_user_id(username)
+    if user_id == None:
+        print 'User does not exist!'
+        exit()
+    req_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    post_id = requests.get(req_url).json()
+    if post_id['meta']['code'] == 200:
+        if len(post_id['data']):
+            return post_id['data'][0]['id']
+        else:
+            print 'There is not recent post'
+    else:
+        print 'Not valid status!'
+    return None
+
+'''
+Function declaration to like a post of another user
+'''
+
+def like_a_post(username):
+    media_id = get_post_id(username)
+    req_url = (BASE_URL + 'media/%s/likes') % (media_id)
+    payload = {'access_token' : ACCESS_TOKEN}
+    print 'POST request url : %s' % (req_url)
+    post_a_like = requests.post(req_url,payload).json()
+    if post_a_like['meta']['code'] == 200:
+        print 'Like was successful!'
+    else:
+        print 'Your like was unsuccessful. Try again!'
+
+'''
+Function declaration to get list of comments of another user
+'''
+
+def get_comment_list(username):
+    media_id = get_post_id(username)
+    req_url = (BASE_URL + 'media/%s/comments?access_token=%s') % (media_id,ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    comment_list = requests.get(req_url).json()
+
+    if comment_list['meta']['code'] == 200:
+        if len(comment_list['data']):
+            print 'List of comments are:'
+            i = 0
+            while i <= len(comment_list):
+                print comment_list['data'][i]['text']
+                i = i + 1
+        else:
+            print 'There is no comments'
+    else:
+        print 'Not valid status!'
+
+'''
+Function declaration make a comment on a post of another user
+'''
+
+def make_a_comment(username):
+    media_id = get_post_id(username)
+    comment_text = raw_input("Your comment: ")
+    payload = {"access_token": ACCESS_TOKEN, "text": comment_text}
+    req_url = (BASE_URL + 'media/%s/comments') % (media_id)
+    print 'POST request url : %s' % (req_url)
+    make_comment = requests.post(req_url, payload).json()
+
+    if make_comment['meta']['code'] == 200:
+        print "Successfully added a new comment!"
+    else:
+        print "Unable to add comment. Try again!"
+
+
 def start_bot():
     while True:
         print '\n'
@@ -141,8 +217,13 @@ def start_bot():
         print "1.Get your own details\n"
         print "2.Get details of a user by username\n"
         print "3.Get your own recent post\n"
-        print "4.Get user recent post\n"
-        print "5.Exit"
+        print "4.Get the recent post of a user by username\n"
+        #print "5.Get a list of people who have liked the recent post of a user\n"
+        print "6.Like the recent post of a user\n"
+        print "7.Get a list of comments on the recent post of a user\n"
+        print "8.Make a comment on the recent post of a user\n"
+        #print "9.Delete negative comments from the recent post of a user\n"
+        print '10.Exit\n'
 
         choice = int(raw_input("Enter you choice: "))
         if choice == 1:
@@ -155,7 +236,22 @@ def start_bot():
         elif choice == 4:
             username = raw_input("Enter the username of the user: ")
             get_user_post(username)
-        elif choice == 5:
+        #elif choice==5:
+        #    insta_username = raw_input("Enter the username of the user: ")
+        #    get_like_list(insta_username)
+        elif choice==6:
+            username = raw_input("Enter the username of the user: ")
+            like_a_post(username)
+        elif choice==7:
+            username = raw_input("Enter the username of the user: ")
+            get_comment_list(username)
+        elif choice==8:
+            username = raw_input("Enter the username of the user: ")
+            make_a_comment(username)
+        #elif choice==9:
+        #    insta_username = raw_input("Enter the username of the user: ")
+        #    delete_negative_comment(insta_username)
+        elif choice == 10:
             exit()
         else:
             print "wrong choice"
