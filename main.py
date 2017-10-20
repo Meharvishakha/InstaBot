@@ -45,6 +45,10 @@ def get_post_id(username):
         print 'Not valid status!'
     return None
 
+'''
+Function declaration to get comment ID of user
+'''
+
 def get_comment_id():
     req_url = (BASE_URL + 'users/self/?access_token=%s') % (ACCESS_TOKEN)
     print 'GET request url : %s' % (req_url)
@@ -236,6 +240,10 @@ def make_a_comment(username):
     else:
         print "Unable to add comment. Try again!"
 
+'''
+Function declaration to delete negative comment on own posts
+'''
+
 def delete_negative_comment():
     media_id = get_post_id(SELF_USERNAME)
     req_url = (BASE_URL + 'media/%s/comments?access_token=%s') % (media_id, ACCESS_TOKEN)
@@ -259,6 +267,10 @@ def delete_negative_comment():
     else:
         print 'Not valid status!'
 
+'''
+Function declaration to delete comments which consist of particular word
+'''
+
 def delete_comment_by_word(word):
     media_id = get_post_id(SELF_USERNAME)
     req_url = (BASE_URL + 'media/%s/comments?access_token=%s') % (media_id, ACCESS_TOKEN)
@@ -278,7 +290,7 @@ def delete_comment_by_word(word):
                     requests.delete(req_url).json()
                     return 'Comment deleted successfully'
                 i = i + 1
-            #print 'Comments doesn\'t contain this word'
+            print 'Comments doesn\'t contain this word'
         else:
             print 'There is no comments on this post'
     else:
@@ -294,13 +306,12 @@ def start_bot():
         print "2.Get details of a user by username\n"
         print "3.Get your own recent post\n"
         print "4.Get the recent post of a user by username\n"
-        #print "5.Get a list of people who have liked the recent post of a user\n"
-        print "6.Like the recent post of a user\n"
-        print "7.Get a list of comments on the recent post of a user\n"
-        print "8.Make a comment on the recent post of a user\n"
-        print "9.Delete negative comments from your recent post\n"
-        print "10. Delete comment with a particular word\n"
-        print "11.Exit\n"
+        print "5.Like the recent post of a user\n"
+        print "6.Get a list of comments on the recent post of a user\n"
+        print "7.Make a comment on the recent post of a user\n"
+        print "8.Delete negative comments from your recent post\n"
+        print "9. Delete comment with a particular word\n"
+        print "10.Exit\n"
 
         choice = int(raw_input("Enter you choice: "))
         if choice == 1:
@@ -313,26 +324,23 @@ def start_bot():
         elif choice == 4:
             username = raw_input("Enter the username of the user: ")
             get_user_post(username)
-        #elif choice==5:
-        #    insta_username = raw_input("Enter the username of the user: ")
-        #    get_like_list(insta_username)
-        elif choice==6:
+        elif choice == 5:
             username = raw_input("Enter the username of the user: ")
             like_a_post(username)
-        elif choice==7:
+        elif choice == 6:
             username = raw_input("Enter the username of the user: ")
             get_comment_list(username)
-        elif choice==8:
+        elif choice == 7:
             username = raw_input("Enter the username of the user: ")
             make_a_comment(username)
-        elif choice==9:
+        elif choice == 8:
             delete_negative_comment()
-        elif choice == 10:
+        elif choice == 9:
             word = raw_input("Enter word to be searched in comment: ")
-            delete_comment_by_word(word)
-        elif choice == 11:
+            print delete_comment_by_word(word)
+        elif choice == 10:
             exit()
         else:
-            print "wrong choice"
+            print "Wrong choice"
 
 start_bot()
