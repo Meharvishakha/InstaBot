@@ -1,8 +1,73 @@
 import requests
 import urllib
+from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
 
 BASE_URL = 'https://api.instagram.com/v1/'
 ACCESS_TOKEN = '4870715640.a48e759.874aba351e5147eca8a9d36b9688f494'
+SELF_USERNAME = 'rajat8310'
+
+'''
+Function declaration to get the Insta ID of a user by username
+'''
+
+def get_user_id(username):
+  req_url = (BASE_URL + 'users/search?q=%s&access_token=%s') % (username, ACCESS_TOKEN)
+  print 'GET request url : %s' % (req_url)
+  user_info = requests.get(req_url).json()
+  if user_info['meta']['code'] == 200:
+      if len(user_info['data']):
+          return user_info['data'][0]['id']
+      else:
+          return None
+  else:
+      print 'Not valid status!'
+      exit()
+
+'''
+Function declaration to get post ID of another user
+'''
+
+def get_post_id(username):
+    user_id = get_user_id(username)
+    if user_id == None:
+        print 'User does not exist!'
+        exit()
+    req_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    post_id = requests.get(req_url).json()
+    if post_id['meta']['code'] == 200:
+        if len(post_id['data']):
+            return post_id['data'][0]['id']
+        else:
+            print 'There is not recent post'
+    else:
+        print 'Not valid status!'
+    return None
+
+def get_comment_id():
+    req_url = (BASE_URL + 'users/self/?access_token=%s') % (ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    user_info = requests.get(req_url).json()
+    if user_info['meta']['code'] == 200:
+        if len(user_info['data']):
+            username = user_info['data']['username']
+            media_id = get_post_id(username)
+            req_url = (BASE_URL + 'media/%s/comments?access_token=%s') % (media_id, ACCESS_TOKEN)
+            print 'GET request url : %s' % (req_url)
+            comment_id = requests.get(req_url).json()
+            if comment_id['meta']['code'] == 200:
+                if len(comment_id['data']):
+                    return comment_id['data'][0]['id']
+                else:
+                    print 'There is no comments'
+            else:
+                print 'Not valid status!'
+        else:
+            print 'User does not exist!'
+    else:
+        print 'Status code other than 200 received!'
+    return None
 
 '''
 Function declaration to get your own info
@@ -24,23 +89,6 @@ def self_info():
         print 'Status code other than 200 received!'
 
 '''
-Function declaration to get the Insta ID of a user by username
-'''
-
-def get_user_id(username):
-  req_url = (BASE_URL + 'users/search?q=%s&access_token=%s') % (username, ACCESS_TOKEN)
-  print 'GET request url : %s' % (req_url)
-  user_info = requests.get(req_url).json()
-  if user_info['meta']['code'] == 200:
-      if len(user_info['data']):
-          return user_info['data'][0]['id']
-      else:
-          return None
-  else:
-      print 'Not valid status!'
-      exit()
-
-'''
 Function declaration to get the info of a user by username
 '''
 
@@ -48,7 +96,7 @@ def get_user_info(username):
   user_id = get_user_id(username)
   if user_id == None:
     print 'User does not exist!'
-    exit()
+    return None
   req_url = (BASE_URL + 'users/%s?access_token=%s') % (user_id, ACCESS_TOKEN)
   print 'GET request url : %s' % (req_url)
   user_info = requests.get(req_url).json()
@@ -63,6 +111,7 @@ def get_user_info(username):
       print 'There is no data for this user!'
   else:
     print 'Not valid status!'
+  return None
 
 '''
 Function declaration to get your own posts
@@ -116,12 +165,11 @@ def get_user_post(username):
                 i = 0
                 no = 0
                 cnt = user_post['data'][0]['likes']['count']
-                print cnt
-                while i <= len(user_post):                                          #this loop will check post with the minimum no. of likes
-                    if user_post['data'][i]['likes']['count'] < cnt:
+                while i < len(user_post):                                          #this loop will check post with the minimum no. of likes
+                    if user_post['data'][i]['likes']['count'] <= cnt:
                         no = i
                         cnt = user_post['data'][i]['likes']['count']
-                        i = i+1
+                        i = i + 1
                 image_name = user_post['data'][no]['id'] + '.jpeg'
                 image_url = user_post['data'][no]['images']['standard_resolution']['url']
                 urllib.urlretrieve(image_url, image_name)
@@ -132,27 +180,6 @@ def get_user_post(username):
             print 'Not valid status!'
     else:
         print 'Wrong choice'
-
-'''
-Function declaration to get post ID of another user
-'''
-
-def get_post_id(username):
-    user_id = get_user_id(username)
-    if user_id == None:
-        print 'User does not exist!'
-        exit()
-    req_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, ACCESS_TOKEN)
-    print 'GET request url : %s' % (req_url)
-    post_id = requests.get(req_url).json()
-    if post_id['meta']['code'] == 200:
-        if len(post_id['data']):
-            return post_id['data'][0]['id']
-        else:
-            print 'There is not recent post'
-    else:
-        print 'Not valid status!'
-    return None
 
 '''
 Function declaration to like a post of another user
@@ -183,7 +210,7 @@ def get_comment_list(username):
         if len(comment_list['data']):
             print 'List of comments are:'
             i = 0
-            while i <= len(comment_list):
+            while i < len(comment_list):
                 print comment_list['data'][i]['text']
                 i = i + 1
         else:
@@ -198,6 +225,7 @@ Function declaration make a comment on a post of another user
 def make_a_comment(username):
     media_id = get_post_id(username)
     comment_text = raw_input("Your comment: ")
+
     payload = {"access_token": ACCESS_TOKEN, "text": comment_text}
     req_url = (BASE_URL + 'media/%s/comments') % (media_id)
     print 'POST request url : %s' % (req_url)
@@ -207,6 +235,54 @@ def make_a_comment(username):
         print "Successfully added a new comment!"
     else:
         print "Unable to add comment. Try again!"
+
+def delete_negative_comment():
+    media_id = get_post_id(SELF_USERNAME)
+    req_url = (BASE_URL + 'media/%s/comments?access_token=%s') % (media_id, ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    comment_info = requests.get(req_url).json()
+    if comment_info['meta']['code'] == 200:
+        if len(comment_info['data']):
+            i = 0
+            while i < len(comment_info):
+                comment_id = comment_info['data'][i]['id']
+                comment_text = comment_info['data'][i]['text']
+                blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
+                if blob.sentiment[0] == 'neg':
+                    req_url = (BASE_URL + 'media/%s/comments/%s?access_token=%s') % (media_id, comment_id, ACCESS_TOKEN)
+                    print 'DELETE request url : %s' % (req_url)
+                    requests.delete(req_url).json()
+                    print 'Comment deleted successfully'
+                i = i + 1
+        else:
+            print 'There is no comments on this post'
+    else:
+        print 'Not valid status!'
+
+def delete_comment_by_word(word):
+    media_id = get_post_id(SELF_USERNAME)
+    req_url = (BASE_URL + 'media/%s/comments?access_token=%s') % (media_id, ACCESS_TOKEN)
+    print 'GET request url : %s' % (req_url)
+    comment_info = requests.get(req_url).json()
+    if comment_info['meta']['code'] == 200:
+        if len(comment_info['data']):
+            i = 0
+            print comment_info['data'][i]['text']
+            while i < len(comment_info):
+                comment_id = comment_info['data'][i]['id']
+                comment_text = comment_info['data'][i]['text']
+                print comment_text
+                if word in comment_text:
+                    req_url = (BASE_URL + 'media/%s/comments/%s?access_token=%s') % (media_id, comment_id, ACCESS_TOKEN)
+                    print 'DELETE request url : %s' % (req_url)
+                    requests.delete(req_url).json()
+                    return 'Comment deleted successfully'
+                i = i + 1
+            #print 'Comments doesn\'t contain this word'
+        else:
+            print 'There is no comments on this post'
+    else:
+        print 'Not valid status!'
 
 
 def start_bot():
@@ -222,8 +298,9 @@ def start_bot():
         print "6.Like the recent post of a user\n"
         print "7.Get a list of comments on the recent post of a user\n"
         print "8.Make a comment on the recent post of a user\n"
-        #print "9.Delete negative comments from the recent post of a user\n"
-        print '10.Exit\n'
+        print "9.Delete negative comments from your recent post\n"
+        print "10. Delete comment with a particular word\n"
+        print "11.Exit\n"
 
         choice = int(raw_input("Enter you choice: "))
         if choice == 1:
@@ -248,10 +325,12 @@ def start_bot():
         elif choice==8:
             username = raw_input("Enter the username of the user: ")
             make_a_comment(username)
-        #elif choice==9:
-        #    insta_username = raw_input("Enter the username of the user: ")
-        #    delete_negative_comment(insta_username)
+        elif choice==9:
+            delete_negative_comment()
         elif choice == 10:
+            word = raw_input("Enter word to be searched in comment: ")
+            delete_comment_by_word(word)
+        elif choice == 11:
             exit()
         else:
             print "wrong choice"
